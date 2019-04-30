@@ -1,18 +1,16 @@
 # ibus-proxy
-Forward IBUS streaming data to multiple destinations, while maintaining a log of IBUS streams.
+Forward IBUS streaming data to multiple destinations.
+This layer is needed because IBUS servers are not plug-n-play. This layer provides plug-n-play for downstream consumers.
 
 ## Usage:
 ```
 # TODO
 ```
 
-## Features:
-* log functonality
-* forward to multiple 
+## Todo
+* make configurable
+* make into a package
 
-## Todo:
-* log functionality
-
-## Missing features
+## Possible missing features
 * ssl and encryption
 * authentication
