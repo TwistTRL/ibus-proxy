@@ -10,7 +10,7 @@ async def source_server(reader, writer):
   print("# Current source number: {}".format(len(sources)))
   sources.append(writer)
   while True:
-    data = await reader.read(100)  # Max number of bytes to read
+    data = await reader.read(1024)  # Max number of bytes to read
     if not data:
       break
     for curWriter in sinks:
@@ -31,7 +31,7 @@ async def sink_server(reader, writer):
   print("# Current client number: {}".format(len(sinks)))
   sinks.append(writer)
   while True:
-    data = await reader.read(100)  # Max number of bytes to read
+    data = await reader.read(1)  # Max number of bytes to read
     if not data:
       break
   sinks.remove(writer)
