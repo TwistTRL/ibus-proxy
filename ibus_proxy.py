@@ -65,7 +65,7 @@ class IBUSProxy:
       "{}\n" \
       "^^^^^^^^^^{}^^^^^^^^^^\n" \
          .format( datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                  self.source.get_extra_info("socket").getpeername()[0],
+                  self.source.get_extra_info("socket").getpeername()[0] if self.source else "None",
                   len(self.sinks),
                   "\n".join(addrStrings),
                   datetime.now().strftime('%Y-%m-%d %H:%M:%S')
