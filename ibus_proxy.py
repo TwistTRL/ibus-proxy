@@ -24,11 +24,7 @@ class IBUSProxy:
       for curWriter in self.sinks:
         if writer == curWriter:
           continue
-        curWriter.write("{},{}\t{}".format( peerAddr,
-                                            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                            data.decode().replace('\t','\t\t')) \
-                                .encode()
-                        )
+        curWriter.write(data)
       if len(self.sinks)>0:
         await asyncio.wait([writer.drain() for writer in self.sinks])  # Flow control, see later
     if writer == self.source:
