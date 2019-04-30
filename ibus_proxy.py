@@ -1,47 +1,78 @@
 #!/usr/bin/env python
 import asyncio
+from datetime import datetime
 
-sources = []
-sinks = []
+class IBUSProxy:
+  def __init__(self,inHost,inPort,outHost,outPort):
+    self.inHost = inHost
+    self.outHost = outHost
+    self.inPort = inPort
+    self.outPort = outPort
+    self.source = None
+    self.sinks = []
 
-async def source_server(reader, writer):
-  peerAddr = writer.get_extra_info("socket").getpeername()[0]
-  print("Adding {}".format(peerAddr))
-  print("# Current source number: {}".format(len(sources)))
-  sources.append(writer)
-  while True:
-    data = await reader.read(1024)  # Max number of bytes to read
-    if not data:
-      break
-    for curWriter in sinks:
-      if writer == curWriter:
-        continue
-      curWriter.write("{}\t{}".format(peerAddr,data.decode().replace('\t','\t\t')) \
-                              .encode()
-                      )
-    await asyncio.wait([writer.drain() for writer in sources])  # Flow control, see later
-  sources.remove(writer)
-  print("Removed {}".format(peerAddr))
-  print("# Current client number: {}".format(len(sources)))
-  writer.close()
+  async def source_server(self,reader,writer):
+    peerAddr = writer.get_extra_info("socket").getpeername()[0]
+    if self.source:
+      self.source.close()
+    self.source = writer
+    self.print_info()
+    while True:
+      data = await reader.read(4096)  # Max number of bytes to read
+      if not data:
+        break
+      for curWriter in self.sinks:
+        if writer == curWriter:
+          continue
+        curWriter.write("{},{}\t{}".format( peerAddr,
+                                            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                            data.decode().replace('\t','\t\t')) \
+                                .encode()
+                        )
+      if len(self.sinks)>0:
+        await asyncio.wait([writer.drain() for writer in self.sinks])  # Flow control, see later
+    if writer == self.source:
+      self.print_info()
+      writer.close()
 
-async def sink_server(reader, writer):
-  peerAddr = writer.get_extra_info("socket").getpeername()[0]
-  print("Adding {}".format(peerAddr))
-  print("# Current client number: {}".format(len(sinks)))
-  sinks.append(writer)
-  while True:
-    data = await reader.read(1)  # Max number of bytes to read
-    if not data:
-      break
-  sinks.remove(writer)
-  print("Removed {}".format(peerAddr))
-  print("# Current client number: {}".format(len(sinks)))
-  writer.close()
+  async def sink_server(self,reader, writer):
+    peerAddr = writer.get_extra_info("socket").getpeername()[0]
+    self.sinks.append(writer)
+    self.print_info()
+    while True:
+      data = await reader.read(1)  # Max number of bytes to read
+      if not data:
+        break
+    self.sinks.remove(writer)
+    self.print_info()
+    writer.close()
 
-async def main(host, portIn, portOut):
-  server1 = await asyncio.start_server(source_server, host, portIn)
-  server2 = await asyncio.start_server(sink_server, host, portOut)
-  await asyncio.wait([server1.serve_forever(),server2.serve_forever()])
+  async def start_servers(self):
+    [sourceServer,sinkServer] = [ await asyncio.start_server(self.source_server, self.inHost, self.inPort),
+                                                     await asyncio.start_server(self.sink_server, self.outHost, self.outPort)
+    ]
+    await asyncio.wait([sourceServer.serve_forever(),
+                        sinkServer.serve_forever()
+                        ])
 
-asyncio.run(main('0.0.0.0',9001,9000))
+  def print_info(self):
+    addrPortList = [writer.get_extra_info("socket").getpeername() for writer in self.sinks]
+    addrStrings = ["  * {}:{}".format(ip,port) for ip,port in addrPortList]
+    print(
+      "vvvvvvvvvv{}vvvvvvvvvv\n" \
+      "Current source: {}\n" \
+      "Current clients: {}\n" \
+      "{}\n" \
+      "^^^^^^^^^^{}^^^^^^^^^^\n" \
+         .format( datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                  self.source.get_extra_info("socket").getpeername()[0],
+                  len(self.sinks),
+                  "\n".join(addrStrings),
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                  )
+    )
+async def main(inHost,inPort,outHost,outPort):
+  ibusProxy = IBUSProxy('0.0.0.0',9001,'0.0.0.0',9000)
+  await ibusProxy.start_servers()
+
+asyncio.run(main('0.0.0.0',9001,'0.0.0.0',9000))
