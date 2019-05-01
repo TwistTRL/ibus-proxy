@@ -10,7 +10,7 @@ class IBUSProxy:
     self.outPort = outPort
     self.source = None
     self.sinks = []
-
+    
   async def source_server(self,reader,writer):
     if self.source:
       writer.write(b"Duplicated source socket connection is not allowed.\n")
