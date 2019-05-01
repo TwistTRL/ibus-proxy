@@ -12,9 +12,10 @@ class IBUSProxy:
     self.sinks = []
 
   async def source_server(self,reader,writer):
-    peerAddr = writer.get_extra_info("socket").getpeername()[0]
     if self.source:
-      self.source.close()
+      writer.write(b"Duplicated source socket connection is not allowed.\n")
+      writer.close()
+      return
     self.source = writer
     self.print_info()
     while True:
@@ -27,12 +28,11 @@ class IBUSProxy:
         curWriter.write(data)
       if len(self.sinks)>0:
         await asyncio.wait([writer.drain() for writer in self.sinks])  # Flow control, see later
-    if writer == self.source:
-      self.print_info()
-      writer.close()
+    writer.close()
+    self.source = None
+    self.print_info()
 
   async def sink_server(self,reader, writer):
-    peerAddr = writer.get_extra_info("socket").getpeername()[0]
     self.sinks.append(writer)
     self.print_info()
     while True:
