@@ -6,7 +6,7 @@ setup(
     author='Lingyu Zhou',
     author_email='zhoulytwin@gmail.com',
     scripts=['bin/ibus_proxy.py'],
-    url='',
+    url='https://github.com/TwistTRL/ibus_proxy',
     license='GPL-3.0',
     description='Useful towel-related stuff.',
     long_description=open('README.txt').read(),
