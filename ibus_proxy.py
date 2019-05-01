@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+"""
+Usage:
+  script.py <inHost> <inPort> <outHost> <outPort> 
+
+"""
+
+from docopt import docopt
 import asyncio
 from datetime import datetime
 
@@ -73,4 +80,9 @@ async def main(inHost,inPort,outHost,outPort):
   ibusProxy = IBUSProxy(inHost,inPort,outHost,outPort)
   await ibusProxy.start_servers()
 
-asyncio.run(main('0.0.0.0',9001,'0.0.0.0',9000))
+if __name__ == "__main__":
+  options = docopt(__doc__)
+  asyncio.run(main(options["<inHost>"],options["<inPort>"],
+                   options["<outHost>"],options["<outPort>"]
+                   )
+              )
