@@ -44,9 +44,10 @@ class IBUSProxy:
     writer.close()
 
   async def start_servers(self):
-    [sourceServer,sinkServer] = [ await asyncio.start_server(self.source_server, self.inHost, self.inPort),
-                                                     await asyncio.start_server(self.sink_server, self.outHost, self.outPort)
-    ]
+    [task,done] = await asyncio.wait([asyncio.start_server(self.source_server, self.inHost, self.inPort),
+                                    asyncio.start_server(self.sink_server, self.outHost, self.outPort)
+                                    ])
+    [sourceServer,sinkServer] = [t.result() for t in task]
     await asyncio.wait([sourceServer.serve_forever(),
                         sinkServer.serve_forever()
                         ])
@@ -67,8 +68,9 @@ class IBUSProxy:
                   datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                   )
     )
+
 async def main(inHost,inPort,outHost,outPort):
-  ibusProxy = IBUSProxy('0.0.0.0',9001,'0.0.0.0',9000)
+  ibusProxy = IBUSProxy(inHost,inPort,outHost,outPort)
   await ibusProxy.start_servers()
 
 asyncio.run(main('0.0.0.0',9001,'0.0.0.0',9000))
