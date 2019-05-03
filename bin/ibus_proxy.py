@@ -30,11 +30,12 @@ class IBUSProxy:
       if not data:
         break
       for curWriter in self.sinks:
-        if writer == curWriter:
-          continue
         curWriter.write(data)
       if len(self.sinks)>0:
-        await asyncio.wait([writer.drain() for writer in self.sinks])  # Flow control, see later
+        try:
+          await asyncio.wait([writer.drain() for writer in self.sinks])  # Flow control, see later
+        except:
+          pass
     writer.close()
     self.source = None
     self.print_info()
@@ -42,10 +43,13 @@ class IBUSProxy:
   async def sink_server(self,reader, writer):
     self.sinks.append(writer)
     self.print_info()
-    while True:
-      data = await reader.read(1)  # Max number of bytes to read
-      if not data:
-        break
+    try:
+      while True:
+          data = await reader.read(1)  # Max number of bytes to read
+          if not data:
+            break
+    except:
+      pass
     self.sinks.remove(writer)
     self.print_info()
     writer.close()
